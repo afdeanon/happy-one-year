@@ -25,8 +25,8 @@ export function subscribeToReactions(mediaId, callback) {
   return onSnapshot(doc(db, 'reactions', mediaId), (snap) => callback(snap.exists() ? snap.data() : {}))
 }
 
-export async function saveReaction(mediaId, emoji, comment) {
+export async function saveReaction(mediaId, emoji) {
   await authReady
   if (!db) return
-  return setDoc(doc(db, 'reactions', mediaId), { emoji, comment: comment.slice(0, 180), updatedAt: Date.now() }, { merge: true })
+  return setDoc(doc(db, 'reactions', mediaId), { emoji, updatedAt: Date.now() })
 }

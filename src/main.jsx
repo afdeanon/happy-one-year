@@ -16,7 +16,7 @@ function Envelope({ onContinue }) {
     <h1>To {siteContent.hisName} <span aria-hidden="true">♡</span></h1>
     <div className={`envelope-wrap ${open ? 'is-open' : ''}`}>
       <button className="envelope" onClick={() => setOpen((current) => !current)} aria-label={open ? 'Close love letter' : 'Open love letter'}>
-        <span className="envelope-back" /><span className="envelope-paper"><span>Better late than never 🤭</span></span><span className="envelope-flap" /><span className="envelope-front" />
+        <span className="envelope-back" /><span className="envelope-paper"><span className="paper-preview">Better late than never 🤭</span><span className="paper-letter">{siteContent.letter}</span></span><span className="envelope-flap" /><span className="envelope-front" />
       </button>
       {!open && <p className="tap-prompt">Tap to open <span>👆</span></p>}
     </div>
@@ -44,16 +44,30 @@ function Memories() {  return <section className="section memories-section" id="
 }
 
 function ReactionBar({ mediaId }) {
-  const [reaction, setReaction] = useState({ emoji: '', comment: '' }); const [comment, setComment] = useState('');
-  useEffect(() => subscribeToReactions(mediaId, (data) => setReaction((r) => ({ ...r, ...data }))), [mediaId])
-  const react = async (emoji) => { setReaction((r) => ({ ...r, emoji })); await saveReaction(mediaId, emoji, reaction.comment || comment) }
-  const saveComment = async () => { const value = comment.slice(0, 180); setReaction((r) => ({ ...r, comment: value })); await saveReaction(mediaId, reaction.emoji || '❤️', value) }
-  return <div className="reaction-bar"><div className="reactions" aria-label="React to this memory">{['❤️', '😂', '🥹', '🔥', '😍'].map((e) => <button key={e} className={reaction.emoji === e ? 'selected' : ''} onClick={() => react(e)} aria-label={`React ${e}`}>{e}</button>)}</div><div className="comment-row"><input value={comment} maxLength="180" onChange={(e) => setComment(e.target.value)} placeholder={reaction.comment || 'leave a tiny note…'} aria-label="Optional comment" /><button onClick={saveComment}>save</button></div></div>
+  const [reaction, setReaction] = useState('')
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  useEffect(() => subscribeToReactions(mediaId, (data) => setReaction(data.emoji || '')), [mediaId])
+  const react = async (emoji) => {
+    if (saving) return
+    setSaving(true)
+    setError('')
+    try {
+      await saveReaction(mediaId, emoji)
+      setReaction(emoji)
+    } catch (error) {
+      console.error('Failed to save reaction', error)
+      setError('Could not save your reaction. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+  return <div className="reaction-bar"><div className="reactions" aria-label="React to this memory">{['❤️', '😂', '🥹', '🔥', '😍'].map((e) => <button key={e} className={reaction === e ? 'selected' : ''} onClick={() => react(e)} aria-label={`React ${e}`} aria-pressed={reaction === e} disabled={saving}>{e}</button>)}</div>{error && <p className="reaction-error" role="alert">{error}</p>}</div>
 }
 
 function TripModal({ trip, onClose }) {
   const [index, setIndex] = useState(0); const media = trip.media[index]; const isNight = new Date().getHours() >= 18 || new Date().getHours() < 7; const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trip.location)}`
-  return <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${trip.title} gallery`} onClick={onClose}><div className={`gallery-modal ${isNight ? 'is-night' : 'is-day'}`} onClick={(e) => e.stopPropagation()}><button className="close-button" onClick={onClose} aria-label="Close gallery">×</button><h3>{trip.title}</h3><div className="gallery-meta"><a href={mapsUrl} target="_blank" rel="noreferrer">{trip.location} ↗</a><span>{trip.dates}</span></div>{media ? <><div className="gallery-stage">{media.type === 'video' ? <video controls playsInline preload="metadata" poster={media.poster} src={media.src} aria-label={media.alt} /> : <img src={media.src} alt={media.alt} loading="lazy" />}</div><ReactionBar mediaId={media.id} /><div className="gallery-nav"><button onClick={() => setIndex((index - 1 + trip.media.length) % trip.media.length)} aria-label="Previous media">←</button><span>{index + 1} / {trip.media.length}</span><button onClick={() => setIndex((index + 1) % trip.media.length)} aria-label="Next media">→</button></div></> : <p className="gallery-empty">{trip.emptyMessage}</p>}</div></div>
+  return <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={`${trip.title} gallery`} onClick={onClose}><div className={`gallery-modal ${isNight ? 'is-night' : 'is-day'}`} onClick={(e) => e.stopPropagation()}><button className="close-button" onClick={onClose} aria-label="Close gallery">×</button><h3>{trip.title}</h3><div className="gallery-meta"><a href={mapsUrl} target="_blank" rel="noreferrer">{trip.location} ↗</a><span>{trip.dates}</span></div>{media ? <><div className="gallery-stage">{media.type === 'video' ? <video controls playsInline preload="metadata" poster={media.poster} src={media.src} aria-label={media.alt} /> : <img src={media.src} alt={media.alt} loading="lazy" />}</div><ReactionBar key={media.id} mediaId={media.id} /><div className="gallery-nav"><button onClick={() => setIndex((index - 1 + trip.media.length) % trip.media.length)} aria-label="Previous media">←</button><span>{index + 1} / {trip.media.length}</span><button onClick={() => setIndex((index + 1) % trip.media.length)} aria-label="Next media">→</button></div></> : <p className="gallery-empty">{trip.emptyMessage}</p>}</div></div>
 }
 
 function Trips() { const [active, setActive] = useState(null); return <section className="section trips-section" id="trips"><div className="section-heading"><p className="eyebrow">Travel Memories</p><h2>Our <em>Trips</em></h2></div><div className="timeline">{siteContent.trips.map((trip) => <button className="trip-card" key={trip.id} onClick={() => setActive(trip)}><div className="trip-image">{trip.cover ? <img src={trip.cover} alt={`${trip.title} cover`} loading="lazy" /> : <div className="trip-cover-placeholder" role="img" aria-label={`${trip.title} placeholder cover`}>🌙 😘</div>}<span>open gallery ↗</span></div><div className="trip-info"><div><p className="eyebrow">{trip.dates}</p><h3>{trip.title}</h3><p>{trip.location}</p></div></div></button>)}</div><p className="trip-note">Hoping we can travel together soon! ♡</p>{active && <TripModal trip={active} onClose={() => setActive(null)} />}</section> }
