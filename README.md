@@ -16,14 +16,15 @@ The site works without Firebase credentials; reactions simply stay local to the 
 
 1. Create a project at [console.firebase.google.com](https://console.firebase.google.com/), add a Web app, and copy its config values into `.env.local` using the keys in `.env.example`.
 2. In Authentication → Sign-in method, enable **Anonymous**.
-3. Create a Firestore database. Deploy the included rules with `firebase deploy --only firestore:rules` (install the CLI with `npm i -g firebase-tools` and run `firebase login` first).
-4. Set your Firebase project for Hosting: `firebase use --add`, choose the project, then run the deploy command below.
+3. Create a Firestore database. In Authentication → Sign-in method, enable **Anonymous**.
+4. Deploy the included Firestore rules with `firebase deploy --only firestore:rules` (install the CLI with `npm i -g firebase-tools` and run `firebase login` first).
+5. Set your Firebase project for Hosting: `firebase use --add`, choose the project, then run the deploy command below.
 
 ## Replace the content
 
 Edit only `src/content.js` for the anniversary copy, name, dates, letter photo, memories, trips, gallery media, and songs. Every photo/video/song has a stable `id` or media id; keep those ids unique so reactions stay attached to the right item.
 
-For your own media, add files under `public/media/` and use paths like `/media/our-song.mp3`, `/media/trip-video.mp4`, and `/media/photo.jpg`. Replace every placeholder URL. Videos use controls, `playsInline`, metadata preload, and a poster.
+For personal media without upgrading Firebase, keep files locally under `public/media/` and use paths like `/media/memories/memory-01.jpg` in `src/content.js`. Those personal folders are ignored by Git, so they stay out of GitHub while still being included in your local Firebase Hosting build. Keep a backup of the media files because another computer will not have them automatically.
 
 ## Compress media
 
@@ -43,8 +44,8 @@ Firebase will print the Hosting URL. Because `noindex` is set, it is intended to
 ## Final replacement checklist
 
 - Replace `hisName`, both date strings, the letter text, and letter photo.
-- Replace all memory/trip/song placeholder images and the sample video.
-- Add your MP3s under `public/media/` and update each song `src`.
+- Replace all memory/trip/song placeholder images and the sample video with local paths under `public/media/`.
+- Keep personal photos, videos, and MP3s out of the GitHub repository; `.gitignore` already excludes them.
 - Keep every media id stable and unique.
 - Confirm Anonymous Auth is enabled and the Firestore rules are deployed.
 - Test first visit, refresh-after-opening, and the envelope button.
