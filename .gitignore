@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+
+# Personal media: store these outside the GitHub repository
+public/media/memories/
+public/media/trips/
+public/media/songs/
